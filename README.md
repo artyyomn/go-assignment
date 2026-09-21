@@ -31,6 +31,11 @@ After that run these:
 go run ./cmd/main.go
 ```
 
+## Features
+- Interactive shell
+- Command History 
+- Tab auto-completion
+
 ## Commands and Usage
 Once the application starts, use:
 - `/register` to create a user
@@ -41,7 +46,3 @@ Once the application starts, use:
 - `/clear` to clear the terminal
 - `/exit` to quit
 
-## Features
-- Interactive shell
-- Command History 
-- Tab auto-completion
