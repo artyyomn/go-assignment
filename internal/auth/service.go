@@ -17,6 +17,11 @@ type Service struct {
 
 const MinPasswordLength = 8
 
+const (
+	maxLoginAttempts = 3
+	lockoutDuration  = 15 * time.Minute
+)
+
 func NewService(user user.Repository, session SessionRespository, config Config) *Service {
 	return &Service{
 		user:    user,
@@ -89,7 +94,33 @@ func (s *Service) Login(ctx context.Context, username string, password string) (
 		return nil, nil, err
 	}
 
+	now := time.Now().UTC()
+	if existingUser.LockedUntil != nil {
+		if now.Before(*existingUser.LockedUntil) {
+			return nil, nil, ErrAccountLocked
+		}
+
+		if err := s.user.UpdateLoginState(ctx, existingUser.ID, 0, nil); err != nil {
+			return nil, nil, err
+		}
+		existingUser.FailedAttempts = 0
+		existingUser.LockedUntil = nil
+	}
+
 	if err := VerifyPassword(password, existingUser.PasswordHash); err != nil {
+		failedAttempts := existingUser.FailedAttempts + 1
+		var lockedUntil *time.Time
+		if failedAttempts >= maxLoginAttempts {
+			lockExpiry := now.Add(lockoutDuration)
+			lockedUntil = &lockExpiry
+		}
+
+		if updateErr := s.user.UpdateLoginState(ctx, existingUser.ID, failedAttempts, lockedUntil); updateErr != nil {
+			return nil, nil, updateErr
+		}
+		if lockedUntil != nil {
+			return nil, nil, ErrAccountLocked
+		}
 		return nil, nil, ErrInvalidCredentials
 	}
 	if s.session == nil {
@@ -99,13 +130,15 @@ func (s *Service) Login(ctx context.Context, username string, password string) (
 		return nil, nil, errors.New("session timeout must be greater than zero")
 	}
 
-	now := time.Now().UTC()
 	session := &Session{
 		UserID:    existingUser.ID,
 		CreatedAt: now,
 		ExpiresAt: now.Add(s.config.SessionTimeout),
 	}
 	if err := s.session.Create(ctx, session); err != nil {
+		return nil, nil, err
+	}
+	if err := s.user.UpdateLoginState(ctx, existingUser.ID, 0, nil); err != nil {
 		return nil, nil, err
 	}
 

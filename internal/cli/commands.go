@@ -96,10 +96,15 @@ func (c *CLI) Exit() {
 	fmt.Println("Goodbye.")
 }
 
+func (c *CLI) Clear() {
+	fmt.Print("\033[H\033[2J")
+}
+
 func (c *CLI) Help() {
 	fmt.Println("usage: /[command]")
 	fmt.Println("commands:")
 	fmt.Println("  /help        :Show help screen")
+	fmt.Println("  /clear       :Clear the screen")
 	fmt.Println("  /register    :Register user")
 	fmt.Println("  /login       :Login with credentials")
 	fmt.Println("  /exit        :Exit the app")

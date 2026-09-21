@@ -63,6 +63,8 @@ func (c *CLI) RunCLI() {
 			return
 		case inputs[0] == "/help":
 			c.Help()
+		case inputs[0] == "/clear":
+			c.Clear()
 		case inputs[0] == "/login":
 			c.Login()
 		case inputs[0] == "/register":

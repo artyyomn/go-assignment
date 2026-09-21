@@ -94,6 +94,17 @@ func (r *SQLiteRepository) FindUser(ctx context.Context, username string) (*user
 	return &u, nil
 }
 
+func (r *SQLiteRepository) UpdateLoginState(ctx context.Context, userID int64, failedAttempts int, lockedUntil *time.Time) error {
+	_, err := r.db.ExecContext(
+		ctx,
+		`UPDATE users SET failed_attempts = ?, locked_until = ? WHERE id = ?`,
+		failedAttempts,
+		lockedUntil,
+		userID,
+	)
+	return err
+}
+
 func (r *SQLiteRepository) UpdateLastLogin(ctx context.Context, userID int64, lastLoginAt time.Time) error {
 	_, err := r.db.ExecContext(
 		ctx,

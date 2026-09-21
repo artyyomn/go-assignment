@@ -11,6 +11,7 @@ var (
 	ErrInvalidPassword    = errors.New("invalid password")
 	ErrPasswordTooShort   = errors.New("password must be at least 8 characters")
 	ErrInvalidCredentials = errors.New("invalid username or password")
+	ErrAccountLocked      = errors.New("account is locked")
 )
 
 type Config struct {
