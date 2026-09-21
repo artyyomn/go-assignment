@@ -37,6 +37,7 @@ func (c *CLI) RunCLI() {
 
 	// Welcome message looks ugly, fix later
 	fmt.Println("Welcome to Interactive Go-User CLI")
+	fmt.Println("Type /help for available commands")
 	//fmt.Println("usage:	 /[command] [options]")
 	//fmt.Println("commands:")
 	//fmt.Println("	 /help")
@@ -58,7 +59,8 @@ func (c *CLI) RunCLI() {
 
 		switch {
 		case inputs[0] == "/exit":
-			log.Println("exited")
+			c.Exit()
+			return
 		case inputs[0] == "/help":
 			c.Help()
 		case inputs[0] == "/login":

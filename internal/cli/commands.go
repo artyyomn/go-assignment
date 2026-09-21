@@ -92,17 +92,21 @@ func (c *CLI) Register() {
 	fmt.Println("\033[1;32mRegistration successful.\033[0m")
 }
 
-func Exit() {}
+func (c *CLI) Exit() {
+	fmt.Println("Goodbye.")
+}
 
 func (c *CLI) Help() {
 	fmt.Println("usage: /[command]")
 	fmt.Println("commands:")
-	fmt.Println("  /help")
-	fmt.Println("  /register")
-	fmt.Println("  /login")
-	fmt.Println("  /exit")
-	fmt.Println("  /whoami")
-	fmt.Println("  /logout")
+	fmt.Println("  /help        :Show help screen")
+	fmt.Println("  /register    :Register user")
+	fmt.Println("  /login       :Login with credentials")
+	fmt.Println("  /exit        :Exit the app")
+	fmt.Println("  /whoami      :Show current user")
+	fmt.Println("  /logout      :Logout of current session")
+	fmt.Println("")
+	fmt.Println("Hit CRTL-C or CTRL-D to quit the application forcefully")
 }
 
 // after login
@@ -110,7 +114,7 @@ func (c *CLI) Whoami() {
 	if !c.requireLogin() {
 		return
 	}
-	fmt.Println("Username:", c.currentUser.Username)
+	fmt.Println("Current user:", c.currentUser.Username)
 }
 
 func (c *CLI) Logout() {

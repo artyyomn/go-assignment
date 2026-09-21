@@ -15,6 +15,8 @@ type Service struct {
 	config  Config
 }
 
+const MinPasswordLength = 8
+
 func NewService(user user.Repository, session SessionRespository, config Config) *Service {
 	return &Service{
 		user:    user,
@@ -36,6 +38,9 @@ func (s *Service) Register(ctx context.Context, username string, password string
 
 	if password == "" {
 		return ErrInvalidPassword
+	}
+	if len([]rune(password)) < MinPasswordLength {
+		return ErrPasswordTooShort
 	}
 
 	// Check whether the username is already registered.
