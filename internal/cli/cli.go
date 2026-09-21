@@ -23,11 +23,23 @@ func NewCLI(authService *auth.Service) *CLI {
 	}
 }
 
+var completer = readline.NewPrefixCompleter(
+	readline.PcItem("/login"),
+	readline.PcItem("/clear"),
+	readline.PcItem("/register"),
+	readline.PcItem("/exit"),
+	readline.PcItem("/logout"),
+	readline.PcItem("/whoami"),
+	readline.PcItem("/help"),
+)
+
 func (c *CLI) RunCLI() {
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:          "~> ",
 		InterruptPrompt: "^C",
 		EOFPrompt:       "exit",
+		HistoryFile:     "/tmp/readline.tmp",
+		AutoComplete:    completer,
 	})
 	c.rl = rl
 	if err != nil {
