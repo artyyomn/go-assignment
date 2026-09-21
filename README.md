@@ -35,6 +35,9 @@ go run ./cmd/main.go
 - Interactive shell
 - Command History 
 - Tab auto-completion
+- Persistant SQLite storage
+- TOTP based 2FA (needs Googel Auth app)
+- Account lockouts 3 failed tries
 
 ## Commands and Usage
 Once the application starts, use:
@@ -42,6 +45,8 @@ Once the application starts, use:
 - `/login` to sign in
 - `/whoami` to show the current user
 - `/logout` to end the current session
+- `/enable2fa` to enable TOTP two-factor authentication for the current user
+- `/disable2fa` to disable TOTP two-factor authentication for the current user
 - `/help` to show the command list
 - `/clear` to clear the terminal
 - `/exit` to quit

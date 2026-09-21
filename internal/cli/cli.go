@@ -29,6 +29,8 @@ var completer = readline.NewPrefixCompleter(
 	readline.PcItem("/register"),
 	readline.PcItem("/exit"),
 	readline.PcItem("/logout"),
+	readline.PcItem("/enable2fa"),
+	readline.PcItem("/disable2fa"),
 	readline.PcItem("/whoami"),
 	readline.PcItem("/help"),
 )
@@ -85,6 +87,10 @@ func (c *CLI) RunCLI() {
 			c.Whoami()
 		case inputs[0] == "/logout":
 			c.Logout()
+		case inputs[0] == "/enable2fa":
+			c.Enable2FA()
+		case inputs[0] == "/disable2fa":
+			c.Disable2FA()
 		default:
 			fmt.Println("Invalid command")
 			c.Help()
@@ -137,4 +143,14 @@ func (c *CLI) readPasswordConfirmation() (string, error) {
 	}
 
 	return string(password), nil
+}
+
+func (c *CLI) readTOTPCode() (string, error) {
+	c.rl.SetPrompt("Authenticator code: ")
+	code, err := c.rl.Readline()
+	c.rl.SetPrompt("~> ")
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(code), nil
 }

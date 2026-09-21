@@ -30,9 +30,11 @@ func (r *SQLiteRepository) Create(ctx context.Context, user *user.User) error {
 			failed_attempts,
 			locked_until,
 			created_at,
-			last_login_at
+			last_login_at,
+			totp_secret,
+			totp_enabled
 		)
-		VALUES (?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		`,
 		user.Username,
 		user.PasswordHash,
@@ -40,6 +42,8 @@ func (r *SQLiteRepository) Create(ctx context.Context, user *user.User) error {
 		user.LockedUntil,
 		user.CreatedAt,
 		user.LastLoginAt,
+		user.TOTPSecret,
+		user.TOTPEnabled,
 	)
 
 	if err != nil {
@@ -69,7 +73,9 @@ func (r *SQLiteRepository) FindUser(ctx context.Context, username string) (*user
 		failed_attempts,
 		locked_until,
 		created_at,
-		last_login_at
+		last_login_at,
+		totp_secret,
+		totp_enabled
 		FROM users
 		WHERE username = ?`,
 		username,
@@ -81,6 +87,8 @@ func (r *SQLiteRepository) FindUser(ctx context.Context, username string) (*user
 		&u.LockedUntil,
 		&u.CreatedAt,
 		&u.LastLoginAt,
+		&u.TOTPSecret,
+		&u.TOTPEnabled,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -110,6 +118,17 @@ func (r *SQLiteRepository) UpdateLastLogin(ctx context.Context, userID int64, la
 		ctx,
 		`UPDATE users SET last_login_at = ? WHERE id = ?`,
 		lastLoginAt,
+		userID,
+	)
+	return err
+}
+
+func (r *SQLiteRepository) UpdateTOTP(ctx context.Context, userID int64, secret *string, enabled bool) error {
+	_, err := r.db.ExecContext(
+		ctx,
+		`UPDATE users SET totp_secret = ?, totp_enabled = ? WHERE id = ?`,
+		secret,
+		enabled,
 		userID,
 	)
 	return err

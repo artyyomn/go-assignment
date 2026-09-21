@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -27,6 +28,14 @@ func (c *CLI) Login() {
 	}
 
 	loggedInUser, session, err := c.authService.Login(context.Background(), username, password)
+	if errors.Is(err, auth.ErrTOTPRequired) {
+		code, codeErr := c.readTOTPCode()
+		if codeErr != nil {
+			fmt.Println("Error reading authentication code:", codeErr)
+			return
+		}
+		loggedInUser, session, err = c.authService.Login(context.Background(), username, password, code)
+	}
 	if err != nil {
 		fmt.Println("========================================")
 		//colorred text rendering codes
@@ -49,7 +58,11 @@ func (c *CLI) showUserDetails(loggedInUser *user.User, session *auth.Session) {
 
 	fmt.Println("Username:", loggedInUser.Username)
 	fmt.Println("Registration Time:", loggedInUser.CreatedAt.Format(time.RFC3339))
-	fmt.Println("MFA Status: Disabled")
+	mfaStatus := "Disabled"
+	if loggedInUser.TOTPEnabled {
+		mfaStatus = "Enabled"
+	}
+	fmt.Println("MFA Status:", mfaStatus)
 	//fmt.Println("Session ID:", session.ID)
 	fmt.Println("Session Time Left:", time.Until(session.ExpiresAt).Round(time.Second))
 	fmt.Println("Last Logged In:", lastLogin)
@@ -110,6 +123,8 @@ func (c *CLI) Help() {
 	fmt.Println("  /exit        :Exit the app")
 	fmt.Println("  /whoami      :Show current user")
 	fmt.Println("  /logout      :Logout of current session")
+	fmt.Println("  /enable2fa   :Enable TOTP two-factor authentication")
+	fmt.Println("  /disable2fa  :Disable TOTP two-factor authentication")
 	fmt.Println("")
 	fmt.Println("Hit CRTL-C or CTRL-D to quit the application forcefully")
 }
@@ -138,6 +153,40 @@ func (c *CLI) Logout() {
 	//fmt.Println("Logout successful.")
 }
 
+func (c *CLI) Enable2FA() {
+	if !c.requireLogin() {
+		return
+	}
+
+	secret, url, err := c.authService.Enable2FA(context.Background(), c.currentUser.ID, c.currentUser.Username)
+	if err != nil {
+		fmt.Println("\033[1;31mEnable 2FA failed:\033[0m", err)
+		return
+	}
+
+	c.currentUser.TOTPEnabled = true
+	c.currentUser.TOTPSecret = &secret
+	fmt.Println("\033[1;32m2FA enabled successfully.\033[0m")
+	fmt.Println("Add this account to your authenticator app using the following URL:")
+	fmt.Println(url)
+	fmt.Println("Secret:", secret)
+}
+
+func (c *CLI) Disable2FA() {
+	if !c.requireLogin() {
+		return
+	}
+
+	if err := c.authService.Disable2FA(context.Background(), c.currentUser.ID); err != nil {
+		fmt.Println("\033[1;31mDisable 2FA failed:\033[0m", err)
+		return
+	}
+
+	c.currentUser.TOTPEnabled = false
+	c.currentUser.TOTPSecret = nil
+	fmt.Println("\033[1;32m2FA disabled successfully.\033[0m")
+}
+
 func (c *CLI) isLoggedIn() bool {
 	if c.currentUser == nil || c.session == nil {
 		return false
@@ -157,7 +206,3 @@ func (c *CLI) requireLogin() bool {
 	fmt.Println("You must be logged in to use this command.")
 	return false
 }
-
-// TOTP auth????
-func Enable2FA()  {}
-func Disable2FA() {}

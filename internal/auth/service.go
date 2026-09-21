@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/artyyomn/go-assignment/internal/user"
+	"github.com/pquerna/otp"
+	"github.com/pquerna/otp/totp"
 )
 
 type Service struct {
@@ -75,7 +77,7 @@ func (s *Service) Register(ctx context.Context, username string, password string
 	return s.user.Create(ctx, newUser)
 }
 
-func (s *Service) Login(ctx context.Context, username string, password string) (*user.User, *Session, error) {
+func (s *Service) Login(ctx context.Context, username string, password string, otpCodes ...string) (*user.User, *Session, error) {
 	username = strings.TrimSpace(username)
 
 	if username == "" {
@@ -123,6 +125,24 @@ func (s *Service) Login(ctx context.Context, username string, password string) (
 		}
 		return nil, nil, ErrInvalidCredentials
 	}
+
+	if existingUser.TOTPEnabled {
+		if existingUser.TOTPSecret == nil || len(otpCodes) == 0 || strings.TrimSpace(otpCodes[0]) == "" {
+			return nil, nil, ErrTOTPRequired
+		}
+		valid, err := totp.ValidateCustom(
+			strings.TrimSpace(otpCodes[0]),
+			*existingUser.TOTPSecret,
+			now,
+			totp.ValidateOpts{Period: 30, Skew: 1, Digits: otp.DigitsSix, Algorithm: otp.AlgorithmSHA1},
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+		if !valid {
+			return nil, nil, ErrInvalidTOTP
+		}
+	}
 	if s.session == nil {
 		return nil, nil, errors.New("session repository is not configured")
 	}
@@ -149,6 +169,37 @@ func (s *Service) Login(ctx context.Context, username string, password string) (
 	existingUser.LastLoginAt = &lastLoginAt
 
 	return existingUser, session, nil
+}
+
+func (s *Service) Enable2FA(ctx context.Context, userID int64, username string) (string, string, error) {
+	existingUser, err := s.user.FindUser(ctx, username)
+	if err != nil {
+		return "", "", err
+	}
+	if existingUser.ID != userID {
+		return "", "", ErrInvalidCredentials
+	}
+	if existingUser.TOTPEnabled {
+		return "", "", ErrTOTPAlreadyEnabled
+	}
+
+	key, err := totp.Generate(totp.GenerateOpts{
+		Issuer:      "Go Login CLI",
+		AccountName: username,
+		SecretSize:  20,
+	})
+	if err != nil {
+		return "", "", err
+	}
+	secret := key.Secret()
+	if err := s.user.UpdateTOTP(ctx, userID, &secret, true); err != nil {
+		return "", "", err
+	}
+	return secret, key.URL(), nil
+}
+
+func (s *Service) Disable2FA(ctx context.Context, userID int64) error {
+	return s.user.UpdateTOTP(ctx, userID, nil, false)
 }
 
 func (s *Service) Logout(ctx context.Context, sessionID string) error {
