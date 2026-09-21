@@ -9,21 +9,17 @@ import (
 	"github.com/artyyomn/go-assignment/internal/user"
 )
 
-var (
-	ErrUserExists         = errors.New("username already exists")
-	ErrInvalidUsername    = errors.New("invalid username")
-	ErrInvalidPassword    = errors.New("invalid password")
-	ErrInvalidCredentials = errors.New("invalid username or password")
-)
-
 type Service struct {
 	user    user.Repository
 	session SessionRespository
+	config  Config
 }
 
-func NewService(user user.Repository) *Service {
+func NewService(user user.Repository, session SessionRespository, config Config) *Service {
 	return &Service{
-		user: user,
+		user:    user,
+		session: session,
+		config:  config,
 	}
 }
 
@@ -54,7 +50,7 @@ func (s *Service) Register(ctx context.Context, username string, password string
 		return ErrUserExists
 	}
 
-	// Hash the password before storing it.
+	//haishng
 	passwordHash, err := HashPassword(password)
 	if err != nil {
 		return err
@@ -66,37 +62,64 @@ func (s *Service) Register(ctx context.Context, username string, password string
 		CreatedAt:    time.Now().UTC(),
 	}
 
-	return s.user.Create(ctx, newUser) // repository.Create()
+	return s.user.Create(ctx, newUser)
 }
 
-func (s *Service) Login(ctx context.Context, username string, password string) (*user.User, error) {
+func (s *Service) Login(ctx context.Context, username string, password string) (*user.User, *Session, error) {
 	username = strings.TrimSpace(username)
 
 	if username == "" {
-		return nil, ErrInvalidUsername
+		return nil, nil, ErrInvalidUsername
 	}
 
 	if password == "" {
-		return nil, ErrInvalidPassword
+		return nil, nil, ErrInvalidPassword
 	}
 
 	existingUser, err := s.user.FindUser(ctx, username)
 	if err != nil {
 		if errors.Is(err, user.ErrNotFound) {
-			return nil, ErrInvalidCredentials
+			return nil, nil, ErrInvalidCredentials
 		}
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err := VerifyPassword(password, existingUser.PasswordHash); err != nil {
-		return nil, ErrInvalidCredentials
+		return nil, nil, ErrInvalidCredentials
+	}
+	if s.session == nil {
+		return nil, nil, errors.New("session repository is not configured")
+	}
+	if s.config.SessionTimeout <= 0 {
+		return nil, nil, errors.New("session timeout must be greater than zero")
 	}
 
-	lastLoginAt := time.Now().UTC()
+	now := time.Now().UTC()
+	session := &Session{
+		UserID:    existingUser.ID,
+		CreatedAt: now,
+		ExpiresAt: now.Add(s.config.SessionTimeout),
+	}
+	if err := s.session.Create(ctx, session); err != nil {
+		return nil, nil, err
+	}
+
+	lastLoginAt := now
 	if err := s.user.UpdateLastLogin(ctx, existingUser.ID, lastLoginAt); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	existingUser.LastLoginAt = &lastLoginAt
 
-	return existingUser, nil
+	return existingUser, session, nil
+}
+
+func (s *Service) Logout(ctx context.Context, sessionID string) error {
+	if sessionID == "" {
+		return ErrSessionNotFound
+	}
+	if s.session == nil {
+		return errors.New("session repository is not configured")
+	}
+
+	return s.session.Delete(ctx, sessionID)
 }

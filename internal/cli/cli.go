@@ -6,11 +6,13 @@ import (
 	"strings"
 
 	"github.com/artyyomn/go-assignment/internal/auth"
+	"github.com/artyyomn/go-assignment/internal/user"
 	"github.com/chzyer/readline"
 )
 
 type CLI struct {
 	authService *auth.Service
+	currentUser *user.User
 	session     *auth.Session
 	rl          *readline.Instance
 }
@@ -35,37 +37,41 @@ func (c *CLI) RunCLI() {
 
 	// Welcome message looks ugly, fix later
 	fmt.Println("Welcome to Interactive Go-User CLI")
-	fmt.Println("usage:	 /[command] [options]")
-	fmt.Println("commands:")
-	fmt.Println("	 /help")
-	fmt.Println("	 /register")
-	fmt.Println("	 /login")
-	fmt.Println("	 /exit")
+	//fmt.Println("usage:	 /[command] [options]")
+	//fmt.Println("commands:")
+	//fmt.Println("	 /help")
+	//fmt.Println("	 /register")
+	//fmt.Println("	 /login")
+	//fmt.Println("	 /exit")
+	//fmt.Println("	 /whoami")
+	//fmt.Println("	 /logout")
 
 	for {
 		line, err := rl.Readline()
 		if err != nil {
 			break
 		}
-		inputs := strings.Split(line, " ")
+		inputs := strings.Fields(line)
+		if len(inputs) == 0 {
+			continue
+		}
 
 		switch {
 		case inputs[0] == "/exit":
 			log.Println("exited")
 		case inputs[0] == "/help":
-			log.Println("asked for help")
+			c.Help()
 		case inputs[0] == "/login":
 			c.Login()
 		case inputs[0] == "/register":
 			c.Register()
+		case inputs[0] == "/whoami":
+			c.Whoami()
+		case inputs[0] == "/logout":
+			c.Logout()
 		default:
 			fmt.Println("Invalid command")
-			fmt.Println("usage:	 /[command] [options]")
-			fmt.Println("commands:")
-			fmt.Println("	 /help")
-			fmt.Println("	 /register")
-			fmt.Println("	 /login")
-			fmt.Println("	 /exit")
+			c.Help()
 		}
 	}
 }
