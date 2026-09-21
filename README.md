@@ -2,25 +2,25 @@
 
 Interactive command-line application for registering users and managing login sessions.
 
-## Requirements
+### Requirements
 
 - Go 1.27 or newer
 - Docker and Docker Compose, if you prefer to run the app in a container
-- (OPTINAL) make
+- make (OPTIONAL)
 
-## Run with Docker
+### Run with Docker
 
-Build and run docker image with:
+Build the docker image and run it with:
 ```sh
 docker compose build
 docker compose run --rm app
 ```
-Alternatively you can also use the Makefile to handle builing it
+Alternatively you can also use the Makefile to handle the builing process
 ```sh
 make build
 make run
 ```
-## Run locally
+### Run locally
 If you have Go 1.27 or newer installed locally
 First install the dependecies
 ```sh
@@ -41,3 +41,7 @@ Once the application starts, use:
 - `/clear` to clear the terminal
 - `/exit` to quit
 
+## Features
+- Interactive shell
+- Command History 
+- Tab auto-completion
