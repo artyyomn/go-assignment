@@ -2,24 +2,35 @@ package db
 
 import (
 	"database/sql"
-	"log"
+	"embed"
+
+	"github.com/pressly/goose/v3"
 	_ "modernc.org/sqlite"
 )
 
-func NewDB(path string)(*sql.DB, error){
+//go:embed migrations/*.sql
+var migrations embed.FS
+
+func NewDB(path string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite", path)
-	if err != nil{
-		log.Println("Error opening database", err)
+	if err != nil {
 		return nil, err
 	}
-	
-	//TODO:
-	// Add automatic migrations
 
-	//Ping the database for sanity
 	err = db.Ping()
-	if err != nil{
-		log.Fatal("Error pinging database", err)
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+
+	goose.SetBaseFS(migrations)
+	if err := goose.SetDialect("sqlite"); err != nil {
+		db.Close()
+		return nil, err
+	}
+	if err := goose.Up(db, "migrations"); err != nil {
+		db.Close()
+		return nil, err
 	}
 
 	return db, nil

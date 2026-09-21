@@ -1,0 +1,14 @@
+.git
+.gitignore
+.gitingore
+data/*.db
+Dockerfile
+docker-compose.yml
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.md
+.env

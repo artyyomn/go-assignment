@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    stdin_open: true
+    tty: true
+    volumes:
+      - app_data:/app/data
+
+volumes:
+  app_data:
