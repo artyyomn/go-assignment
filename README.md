@@ -6,45 +6,33 @@ Interactive command-line application for registering users and managing login se
 
 - Go 1.27 or newer
 - Docker and Docker Compose, if you prefer to run the app in a container
-- (optional) make
+- (OPTINAL) make
 
 ## Run with Docker
 
-First build the docker image
-
+Build and run docker image with:
 ```sh
 docker compose build
-```
-and then run it with
-
-```sh
 docker compose run --rm app
 ```
-
-
-## Run locally
-
-Install the dependecies with:
-
-```sh
-go mod tidy
-```
-then run it with
-
-```sh
-go run ./cmd/main.go
-```
-Alternatively you can also use the Makefile if you have make installed:
-
+Alternatively you can also use the Makefile to handle builing it
 ```sh
 make build
 make run
 ```
+## Run locally
+If you have Go 1.27 or newer installed locally
+First install the dependecies
+```sh
+go mod tidy
+```
+After that run these:
+```sh
+go run ./cmd/main.go
+```
 
-## Commands
-
+## Commands and Usage
 Once the application starts, use:
-
 - `/register` to create a user
 - `/login` to sign in
 - `/whoami` to show the current user
