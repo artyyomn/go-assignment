@@ -12,7 +12,7 @@ type Session struct{
 	CreatedAt time.Time
 }
 
-type sessionRespository interface{
+type SessionRespository interface{
 	Create(ctx context.Context, session *Session) error
 	Find(ctx context.Context, id string)(*Session, error)
 	Delete(ctx context.Context, id string) error

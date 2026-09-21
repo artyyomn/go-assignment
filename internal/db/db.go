@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"log"
+	_ "modernc.org/sqlite"
 )
 
 func NewDB(path string)(*sql.DB, error){
@@ -11,6 +12,9 @@ func NewDB(path string)(*sql.DB, error){
 		log.Println("Error opening database", err)
 		return nil, err
 	}
+	
+	//TODO:
+	// Add automatic migrations
 
 	//Ping the database for sanity
 	err = db.Ping()
